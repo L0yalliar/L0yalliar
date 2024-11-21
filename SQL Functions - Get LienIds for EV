@@ -1,0 +1,29 @@
+USE [Data_Team_Automation]
+GO
+/****** Object:  UserDefinedFunction [dbo].[fn_GetLienIds_EV]    Script Date: 11/21/2024 12:05:22 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+--=====================================================--
+-- Author : Ashram Subba
+-- Created Date : 10/25/2024
+-- Description : to get lienIds based on Response
+--=====================================================--
+
+
+ALTER Function [dbo].[fn_GetLienIds_EV]
+(
+    @EVStatus nvarchar(20),
+    @Result nvarchar(20)
+)
+Returns Table
+AS
+Return
+(
+    Select LienId
+    from dbo.fn_MatchSSN_Stage()
+    where EV = @EVStatus
+          and Result = @Result
+)
