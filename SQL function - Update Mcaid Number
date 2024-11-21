@@ -1,0 +1,64 @@
+USE [Data_Team_Automation]
+GO
+/****** Object:  UserDefinedFunction [dbo].[fn_Update_McaidNumber]    Script Date: 11/21/2024 12:09:38 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER FUNCTION [dbo].[fn_Update_McaidNumber] ()
+RETURNS TABLE
+AS
+RETURN
+(
+    SELECT f.Id,
+           f.MedicaidNumber,
+           M.McaidNumber, -- Medicaid number from Medicaid_Raw
+           f.IdentificationNumber,
+           M.IdNumber,    -- ID number from Medicaid_Raw
+           f.CaseNumber,
+           M.Casenum,     -- Case number from Medicaid_Raw
+                          -- CASE statement to evaluate match conditions
+           CASE
+               -- If all three columns match
+               WHEN f.MedicaidNumber = M.McaidNumber
+                    AND f.IdentificationNumber = M.IdNumber
+                    AND f.CaseNumber = M.Casenum THEN
+                   'Good'
+
+               -- If any two columns match
+               WHEN f.MedicaidNumber = M.McaidNumber
+                    AND f.IdentificationNumber = M.IdNumber THEN
+                   'Medicaid & ID Match'
+               WHEN f.MedicaidNumber = M.McaidNumber
+                    AND f.CaseNumber = M.Casenum THEN
+                   'Medicaid & Case Match'
+               WHEN f.IdentificationNumber = M.IdNumber
+                    AND f.CaseNumber = M.Casenum THEN
+                   'ID & Case Match'
+
+               -- If only one of the columns matches
+               WHEN f.MedicaidNumber = M.McaidNumber THEN
+                   'Medicaid Match'
+               WHEN f.IdentificationNumber = M.IdNumber THEN
+                   'ID Match'
+               WHEN f.CaseNumber = M.Casenum THEN
+                   'Case Match'
+
+               -- If none of the fields match, return 'Update'
+               ELSE
+                   'Update'
+           END AS Status
+    FROM [S3Reporting].dbo.fullproductviews AS f
+        INNER JOIN Medicaid_Raw AS M with (Nolock)
+            ON f.Id = M.LienId
+    WHERE
+        -- Only consider rows from Medicaid_Raw where at least one column is NOT NULL and doesn't contain 'N/A' or 'No'
+        (
+            M.McaidNumber IS NOT NULL
+            AND M.McaidNumber NOT IN ( 'N/A', 'No' )
+            OR M.IdNumber IS NOT NULL
+               AND M.IdNumber NOT IN ( 'N/A', 'No' )
+            OR M.Casenum IS NOT NULL
+               AND M.Casenum NOT IN ( 'N/A', 'No' )
+        )
+)
