@@ -1,0 +1,67 @@
+USE [Data_Team_Automation]
+GO
+/****** Object:  StoredProcedure [dbo].[Sp_Medicaid]    Script Date: 11/21/2024 12:17:11 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- ====================================================================
+-- Author : Ashram Subba
+-- Created Date : 11/11/2024
+-- Description : To get all the results from functions
+
+--------Modified History-----------
+-- Date           Name              Description
+-- 11/20/2024     Ashram Subba      Added an extra parameter for capturing the ReceivedDate only for claims part
+ALTER Procedure [dbo].[Sp_Medicaid]
+(
+    @OperationType as nvarchar(20),
+    @RecDate Date = NULL
+)
+As
+Begin
+    If (@OperationType = 'EV')
+    Begin
+        Select *
+        from fn_MatchSSN_Stage()
+
+        Select LienId as [LienId-Yes (EV)]
+        from fn_GetLienIds_EV('Yes', 'Good')
+
+        Select LienId as [LienId-No (EV)]
+        from fn_GetLienIds_EV('No', 'Good')
+
+        Select *
+        from fn_Update_McaidNumber()
+
+        Select *
+        from fn_Update_MCO_Count()
+
+        Select *
+        from Fn_EV_Finalization()
+    End
+    Else if (@OperationType = 'Claims')
+    Begin
+        Select *
+        from fn_Match_Stage()
+
+        Select LienId as [LienId-Yes (Claims)]
+        from fn_GetLienIds_Claims('Yes', 'Good')
+
+        Select LienId as [LienId-No (Claims)]
+        from fn_GetLienIds_Claims('No', 'Good')
+
+        Select *
+        from Fn_Update_LienAmount(@RecDate)
+
+        Select *
+        from fn_Update_McaidNumber()
+
+        Select *
+        from fn_Update_MCO_Count()
+
+        Select *
+        from Fn_Claims_Finalization()
+    End
+
+End
