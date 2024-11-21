@@ -1,0 +1,43 @@
+USE [Data_Team_Automation]
+GO
+/****** Object:  UserDefinedFunction [dbo].[Fn_Update_MCO_Count]    Script Date: 11/21/2024 12:10:58 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+--==========================================================--
+-- Author : Ronak Vadher
+-- Created Date : 11/5/2024
+-- Description : To get clientIds to update MCO count as 9
+--==========================================================--
+
+
+ALTER Function [dbo].[Fn_Update_MCO_Count] ()
+Returns table
+As
+Return
+(
+    SELECT Lienid,
+           f.clientid,
+           m.MCO,
+           CASE
+               WHEN m.mco in ( '', 'N/A', 'none', 'NO', 'N' ) THEN
+                   'No MCO'
+               WHEN m.mco IS NULL THEN
+                   'No MCO'
+               ELSE
+                   '9'
+           END AS MCO_status
+    FROM Medicaid_Raw AS m with (Nolock)
+        JOIN [S3Reporting].dbo.Fullproductviews AS f
+            ON f.id = m.lienid
+    WHERE CASE
+              WHEN m.mco in ( '', 'N/A', 'none', 'NO', 'N' ) THEN
+                  'No MCO'
+              WHEN m.mco IS NULL THEN
+                  'No MCO'
+              ELSE
+                  '9'
+          END = '9'
+)
