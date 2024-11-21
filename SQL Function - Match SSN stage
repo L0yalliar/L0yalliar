@@ -1,0 +1,63 @@
+USE [Data_Team_Automation]
+GO
+/****** Object:  UserDefinedFunction [dbo].[fn_MatchSSN_Stage]    Script Date: 11/21/2024 12:07:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+--========================================================--
+--Author : Ashram Subba
+--Create Date : 10/23/2024
+--Description : To match SSN and check Stage with LPM
+--========================================================--
+ALTER function [dbo].[fn_MatchSSN_Stage] ()
+Returns table
+As
+Return
+(
+    Select f.ClientId,
+           M.ClientSSN as Uncleaned_SSN,
+           [dbo].[Fn_CleanSSN_Mcaid](M.ClientSSN) as Cleaned_SSN,
+           trim(f.ClientSSN) as LPM_SSN,
+           CASE
+               WHEN LEFT(M.EV, 1) IN ( 'Y', 'N' ) THEN
+                   CASE LEFT(M.EV, 1)
+                       WHEN 'Y' THEN
+                           'Yes'
+                       ELSE
+                           'No'
+                   END
+               WHEN LEFT(M.EV, 3) = 'Yes' THEN
+                   'Yes'
+               WHEN LEFT(M.EV, 2) = 'No' THEN
+                   'No'
+               ELSE
+                   'Unknown' -- Handle unexpected formats
+           END AS 'EV',
+           M.LienId,
+           f.Id,
+           f.Stage,
+           f.lientype,
+           f.MedicaidNumber,
+           M.McaidNumber,
+           f.IdentificationNumber,
+           M.IdNumber,
+           f.CaseNumber,
+           M.CaseNum,
+           Case
+               When f.Stage = 'Entitlement Verification'
+                    and f.clientSSN = [dbo].[Fn_CleanSSN_Mcaid](M.ClientSSN) then
+                   'Good'
+               when f.Stage = 'Entitlement Verification'
+                    and f.ClientSSN != [dbo].[Fn_CleanSSN_Mcaid](M.ClientSSN) then
+                   'Bad'
+               When f.Stage != 'Entitlement Verification'
+                    and f.ClientSSN = [dbo].[Fn_CleanSSN_Mcaid](M.ClientSSN) then
+                   'Bad'
+               Else
+                   'Bad'
+           End as 'Result'
+    from [S3Reporting].dbo.Fullproductviews as f
+        Inner join Medicaid_Raw as M with (NoLock)
+            on f.Id = M.LienId
+)
