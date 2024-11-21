@@ -1,0 +1,30 @@
+USE [Data_Team_Automation]
+GO
+/****** Object:  UserDefinedFunction [dbo].[fn_GetLienIds_Claims]    Script Date: 11/21/2024 12:04:12 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+--================================================--
+-- Author : Ashram Subba
+-- Created Date : 10/28/2024
+-- Description : To get liends based on response
+--================================================--
+
+
+ALTER Function [dbo].[fn_GetLienIds_Claims]
+(
+    @Claims nvarchar(20),
+    @Result nvarchar(20)
+)
+Returns Table
+As
+Return
+(
+    Select LienId,
+           Lienamount
+    from fn_Match_Stage()
+    Where Claims = @Claims
+          and Result = @Result
+)
